@@ -11,23 +11,24 @@ import logging
 import curses
 import signal
 
-from colors import bcolors
+from colorama import Fore
 from score import Leaderboard
 from pullrequests import PRCalc
 
 
-
-
 config = {}
-# stdscr = curses.initscr()
-# curses.noecho()
-# curses.cbreak()
-# stdscr.keypad(1)
+strscr = curses.initscr()
+curses.start_color()
+curses.noecho()
+curses.cbreak()
+strscr.keypad(True)
 
 
 my_leaderboard = Leaderboard()
 pull_requests = PRCalc()
 
+
+curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
 def fetch_newest_commit(repo):
     """Fetch the newest from the repository."""
@@ -75,14 +76,14 @@ class MainWorker(object):
         """
         Main function, always running.
 
-        * fethes the newest commit and compares it to the previous one fetched
+        * fetches the newest commit and compares it to the previous one fetched
         * prints the message if it's new
         * updates the score of its author
         * updates the pull requests storage
         * plays song
         * waits for 10 seconds and repeats everything
         """
-        #try:
+        # try:
         newest_commit_sha, commit, user_id = fetch_newest_commit(
             self.config['commit_repo'])
         if newest_commit_sha != self.last_commit_sha:
@@ -93,17 +94,17 @@ class MainWorker(object):
             pull_requests.update(config['pullrequests_repo'])
             song_to_play = get_song_name(commit['author']['name'])
             play_song(song_to_play)
-        #except Exception as e:
+        # except Exception as e:
             # stdscr.addstr(0, 0, "github doesn't answer {0}".format(e))
             # stdscr.refresh()
             # last_commit_sha = None
 
     def print_commit(self, commit, user_id, sha):
         """Print the author's name, commit message and merge waiting time."""
-        committer = '%s\n%s just got merged!%s\n\n' % \
-                    (bcolors.OKGREEN,
+        committer = '\n%s just got merged!\n\n' % \
+                    (
                      commit['author']['name'],
-                     bcolors.ENDC)
+                    )
         message = '%s' % commit['message']
         # merging_time = pull_requests.get_frustration_time(
         #     user_id, sha, commit['author']['date'])
@@ -114,7 +115,7 @@ class MainWorker(object):
         lines_to_print = committer + message  # + merging_timep
         lines_to_print = lines_to_print.split('\n')
         for i in lines_to_print:
-            self.window.addstr(line, 0, i)
+            self.window.addstr(line, 0, i, curses.color_pair(1))
             self.window.refresh()
             line = line + 1
 
@@ -122,6 +123,7 @@ class MainWorker(object):
         """ Handles user interrupt """
         self.window.addstr("You pressed Ctrl+C!")
         self.window.refresh()
+        curses.endwin()
         sys.exit(0)
 
 
@@ -141,3 +143,4 @@ def main(window):
 
 if __name__ == '__main__':
     curses.wrapper(main)
+    curses.endwin()
